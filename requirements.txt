@@ -1,0 +1,9 @@
+streamlit
+python-dotenv
+pydantic
+langgraph
+langchain
+langchain-community
+chromadb
+pypdf
+EOF
