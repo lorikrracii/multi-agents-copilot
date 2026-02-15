@@ -6,4 +6,5 @@ langchain
 langchain-community
 chromadb
 pypdf
-EOF
+openai
+tiktoken
