@@ -231,3 +231,4 @@ logs/
 
 # If you keep large PDFs you don't want committed (optional)
 # *.pdf
+eval/report.json
