@@ -15,7 +15,6 @@ from agents.workflow import answer_question
 # ==================== PAGE CONFIG (must be first Streamlit call) ====================
 st.set_page_config(
     page_title="Kosovo HR Ops Copilot",
-    page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -29,16 +28,15 @@ st.markdown(
     .stApp { background: #0f1419; }
 
     .block-container {
-        padding-top: 2rem;
+        padding-top: 1.2rem;
         padding-bottom: 1rem;
         max-width: 1000px;
     }
 
-    /* Messages container */
+    /* Messages container (min-height is overridden dynamically below) */
     .messages-container {
         padding: 20px;
         margin-bottom: 120px;
-        min-height: 60vh;
     }
 
     /* User message */
@@ -90,112 +88,68 @@ st.markdown(
         letter-spacing: 0.5px;
     }
 
-    /* MAIN ANSWER - BIGGER AND MORE VISIBLE */
+    /* MAIN ANSWER */
     .message-content {
         font-size: 18px !important;
         line-height: 1.8 !important;
         color: #f7fafc !important;
         font-weight: 500 !important;
-        margin: 16px 0 !important;
-        padding: 12px 0 !important;
+        margin: 10px 0 8px 0 !important;
+        padding: 8px 0 !important;
         word-wrap: break-word;
         overflow-wrap: anywhere;
         white-space: normal;
     }
 
-    /* Agent workflow - SMALLER */
-    .agent-workflow-inline {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 10px;
-        background: #2d374880;
-        border-radius: 8px;
-        margin: 8px 0;
-        font-size: 10px;
-        opacity: 0.7;
-        flex-wrap: wrap;
-    }
-
-    .agent-step-inline {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        padding: 3px 8px;
-        border-radius: 6px;
-        background: #1a202c;
-        font-size: 10px;
-    }
-
-    .agent-step-inline.active { background: #667eea; }
-    .agent-step-inline.completed { background: #48bb78; }
-
-    /* Citation badge */
-    .citation-badge {
-        display: inline-block;
-        background: #667eea;
-        color: white;
-        padding: 4px 10px;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 600;
-        margin: 0 4px;
-        white-space: nowrap;
-        max-width: 100%;
-    }
-
-    /* Status badge - SMALLER */
-    .status-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 10px;
-        border-radius: 8px;
-        font-size: 10px;
-        font-weight: 700;
-        margin-top: 8px;
-        text-transform: uppercase;
-        opacity: 0.8;
-    }
-
-    .status-pass { background: #48bb78; color: white; }
-    .status-fail { background: #f56565; color: white; }
-    .status-unknown { background: #718096; color: white; }
-
     /* Not found message */
     .not-found {
-        background: #744210;
-        border: 2px solid #ed8936;
+        background: rgba(237, 137, 54, 0.10);
+        border: 1px solid #ed8936;
         color: #fbd38d;
-        padding: 16px 20px;
+        padding: 14px 18px;
         border-radius: 12px;
-        font-weight: 600;
+        font-weight: 650;
         text-align: center;
-        font-size: 16px;
-        margin: 12px 0;
+        font-size: 15px;
+        margin: 10px 0 6px 0;
     }
 
-    /* Citations section */
-    .citations-section {
-        margin-top: 16px;
-        padding-top: 16px;
+    /* Sources at end of answer */
+    .sources-row {
+        margin-top: 10px;
+        padding-top: 10px;
         border-top: 1px solid #2d3748;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
     }
 
-    .citations-title {
+    .sources-title {
         font-size: 11px;
-        color: #718096;
-        margin-bottom: 8px;
-        font-weight: 600;
+        color: #a0aec0;
+        font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        margin-right: 6px;
+        opacity: 0.9;
     }
 
-    /* Metrics - SMALLER */
-    .metrics-row { display: flex; gap: 8px; margin: 10px 0; }
-    .metric-box { flex: 1; background: #2d3748; padding: 8px; border-radius: 6px; text-align: center; }
-    .metric-value { font-size: 16px; font-weight: 700; color: #667eea; }
-    .metric-label { font-size: 9px; color: #a0aec0; text-transform: uppercase; margin-top: 2px; }
+    .source-chip {
+        display: inline-flex;
+        align-items: center;
+        max-width: 100%;
+        background: #2d3748;
+        border: 1px solid #4a5568;
+        color: #e2e8f0;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 
     /* Streamlit chat input styling */
     .stChatInput { background: #1a202c !important; border-top: 2px solid #2d3748 !important; }
@@ -248,15 +202,29 @@ st.markdown(
     /* Header */
     .chat-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 20px;
+        padding: 18px 20px;
         border-radius: 12px;
-        margin-bottom: 20px;
+        margin-bottom: 0px;
         box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
     }
     .chat-title { color: white; font-size: 24px; font-weight: 700; margin: 0; }
-    .chat-subtitle { color: rgba(255, 255, 255, 0.9); font-size: 14px; margin-top: 4px; }
+    .chat-subtitle { color: rgba(255, 255, 255, 0.9); font-size: 14px; margin-top: 2px; }
 
-    /* Evidence card - SMALLER */
+    /* Welcome (transparent card inside messages container) */
+    .welcome-wrap {
+        text-align: center;
+        padding: 18px 14px;
+        margin: 8px 0 2px 0;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid #2d3748;
+        border-radius: 16px;
+        color: #a0aec0;
+    }
+    .welcome-emoji { font-size: 34px; margin-bottom: 6px; }
+    .welcome-title { font-size: 18px; font-weight: 650; margin-bottom: 4px; color: #e2e8f0; }
+    .welcome-sub { font-size: 13px; }
+
+    /* Evidence card */
     .evidence-card {
         background: #2d3748;
         border: 1px solid #4a5568;
@@ -267,6 +235,46 @@ st.markdown(
     }
     .evidence-header { color: #a0aec0; font-weight: 600; margin-bottom: 4px; font-size: 11px; }
     .evidence-text { color: #cbd5e0; line-height: 1.5; font-size: 12px; }
+
+    /* Visible assistant "thinking" bubble */
+    .typing-message {
+        background: #1a202c;
+        border: 1px dashed #4a5568;
+        color: #e2e8f0;
+        padding: 18px 20px;
+        border-radius: 16px;
+        margin: 16px 0;
+        margin-right: 20%;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        animation: slideInLeft 0.25s ease;
+    }
+    .typing-line {
+        font-size: 15px;
+        color: #cbd5e0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 2px;
+    }
+    .typing-dots {
+        display: inline-flex;
+        gap: 4px;
+    }
+    .typing-dots span {
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: #a0aec0;
+        opacity: 0.35;
+        animation: dotPulse 1.2s infinite ease-in-out;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes dotPulse {
+        0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+        40% { opacity: 1; transform: translateY(-2px); }
+    }
 </style>
 """,
     unsafe_allow_html=True,
@@ -280,58 +288,52 @@ def now_hhmm() -> str:
 
 
 def safe_html(text: str) -> str:
-    """
-    Escape user/LLM text so it can't inject HTML/JS into unsafe_allow_html blocks.
-    Also keeps newlines readable.
-    """
     if text is None:
         return ""
     return html.escape(str(text)).replace("\n", "<br>")
 
 
-def extract_citations_from_text(text: str):
-    """Extract all citations from answer text like [file | chunk]"""
-    if not text:
-        return []
-    return re.findall(r"\[([^\]]+)\]", text)
-
-
-def highlight_citations_in_text(text: str) -> str:
-    """Replace citations with styled badges (safe against HTML injection)."""
+def strip_citations(text: str) -> str:
+    """Remove [ ... ] citations from answer so sources can be shown only at the end."""
     if not text:
         return ""
-
-    # Escape the whole text first (prevents injection)
-    escaped = safe_html(text)
-
-    def replace_citation(match):
-        citation_text = match.group(1)
-        full_title = citation_text
-        display_text = citation_text if len(citation_text) < 40 else citation_text[:37] + "..."
-        return f'<span class="citation-badge" title="{full_title}">{display_text}</span>'
-
-    return re.sub(r"\[([^\]]+)\]", replace_citation, escaped)
+    cleaned = re.sub(r"\s*\[[^\]]+\]\s*", " ", text)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    # Fix spacing before punctuation
+    cleaned = re.sub(r"\s+([.,;:!?])", r"\1", cleaned)
+    return cleaned
 
 
-def render_agent_workflow_inline(steps_completed: list[int]):
-    """Render compact inline agent workflow"""
-    all_steps = [("📋", "Plan"), ("🔍", "Research"), ("✍️", "Write"), ("✅", "Verify")]
+def extract_sources(text: str) -> list[str]:
+    """
+    Extract citations from answer, supports:
+      [A | x]
+      [A | x; B | y]
+      [A | x, B | y]
+    Returns unique sources preserving order.
+    """
+    if not text:
+        return []
+    groups = re.findall(r"\[([^\]]+)\]", text)
+    out = []
+    seen = set()
+    for g in groups:
+        parts = re.split(r"\s*[;,]\s*", g.strip())
+        for p in parts:
+            p = p.strip()
+            if p and p not in seen:
+                seen.add(p)
+                out.append(p)
+    return out
 
-    html_out = '<div class="agent-workflow-inline">'
-    for i, (icon, label) in enumerate(all_steps):
-        if i < len(steps_completed):
-            status_class = "completed" if i < len(steps_completed) - 1 else "active"
-        else:
-            status_class = ""
-        html_out += f'<div class="agent-step-inline {status_class}">{icon} {label}</div>'
-    html_out += "</div>"
-    return html_out
+
+# Fixed company name (removed from sidebar as requested)
+COMPANY_NAME = "KosovoTech LLC"
 
 
-def run_question(question: str, k: int, company_name: str = "KosovoTech LLC"):
-    """Run the workflow safely and always return a result dict."""
+def run_question(question: str, k: int):
     try:
-        return answer_question(question, k=k, company_name=company_name)
+        return answer_question(question, k=k, company_name=COMPANY_NAME)
     except Exception as e:
         return {
             "answer": "Not found in the sources.",
@@ -346,28 +348,28 @@ def run_question(question: str, k: int, company_name: str = "KosovoTech LLC"):
 # ==================== SIDEBAR ====================
 with st.sidebar:
     st.markdown('<div style="padding: 16px;">', unsafe_allow_html=True)
-    st.markdown("### 🤖 HR Ops Copilot")
+    st.markdown("### HR Ops Copilot")
     st.markdown(
-        '<div style="font-size: 12px; color: #a0aec0; margin-bottom: 20px;">Kosovo Labor Laws & Policies</div>',
+        '<div style="font-size: 12px; color: #a0aec0; margin-bottom: 16px;">Kosovo Labor Laws & Policies</div>',
         unsafe_allow_html=True,
     )
 
     st.markdown("---")
-    st.markdown("### ⚙️ Settings")
+    st.markdown("### Settings")
 
-    company_name = st.text_input("🏢 Company name", value="KosovoTech LLC")
-    output_mode = st.radio("🧾 Output mode", ["Executive", "Analyst"], horizontal=True, index=0)
+    k_label_to_value = {"Small": 4, "Standard": 6, "Deep": 8}
+    k_choice = st.radio("Retrieval depth", list(k_label_to_value.keys()), horizontal=True, index=1)
+    k = k_label_to_value[k_choice]
 
-    k = st.slider("📊 Retrieved chunks", min_value=3, max_value=10, value=6)
-    show_details = st.checkbox("🔍 Show details", value=False)
-    show_citations_list = st.checkbox("📚 Show citations", value=True)
+    show_details = st.checkbox("Show details", value=False)
+    show_sources = st.checkbox("Show sources", value=True)
 
     st.markdown("---")
-    st.markdown("### 💡 Example Questions")
+    st.markdown("### Example Questions")
 
     examples = [
         "What is the remote work policy?",
-        "What are the official holidays in Kosovo?",
+        "List the official holidays in Kosovo according to Law 03-L-064.",
         "Maximum working hours per week?",
         "Safety requirements at work?",
         "Gender equality policy?",
@@ -382,11 +384,11 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown(
-        '<div class="info-box">💡 <strong>Tip:</strong> Press Enter to submit your question. All answers include verified citations.</div>',
+        '<div class="info-box"><strong>Tip:</strong> Press Enter to submit your question. Answers include verified citations.</div>',
         unsafe_allow_html=True,
     )
 
-    if st.button("🗑️ Clear Chat", use_container_width=True):
+    if st.button("Clear Chat", use_container_width=True):
         st.session_state.conversation_history = []
         st.session_state.pop("pending_question", None)
         st.rerun()
@@ -395,13 +397,24 @@ with st.sidebar:
 
 # ==================== INITIALIZE SESSION ====================
 st.session_state.setdefault("conversation_history", [])
+st.session_state.setdefault("inflight_question", None)
+st.session_state.setdefault("assistant_typing_since", None)
+
+# Dynamic: messages container is smaller when empty
+is_empty = len(st.session_state.conversation_history) == 0
+min_h = "20vh" if is_empty else "60vh"
+mb = "80px" if is_empty else "120px"
+st.markdown(
+    f"<style>.messages-container{{min-height:{min_h}; margin-bottom:{mb};}}</style>",
+    unsafe_allow_html=True,
+)
 
 # ==================== HEADER ====================
 st.markdown(
     """
 <div class="chat-header">
-    <div class="chat-title">💼 Kosovo HR Operations Assistant</div>
-    <div class="chat-subtitle">Ask questions about labor laws and company policies • All answers are verified with citations</div>
+    <div class="chat-title">Kosovo HR Operations Assistant</div>
+    <div class="chat-subtitle">Ask questions about labor laws and company policies. All answers are verified with citations.</div>
 </div>
 """,
     unsafe_allow_html=True,
@@ -411,13 +424,14 @@ st.markdown(
 with st.container():
     st.markdown('<div class="messages-container">', unsafe_allow_html=True)
 
+    # Welcome (transparent card inside container)
     if not st.session_state.conversation_history:
         st.markdown(
             """
-        <div style="text-align: center; padding: 60px 20px; color: #a0aec0;">
-            <div style="font-size: 48px; margin-bottom: 16px;">👋</div>
-            <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Welcome to HR Ops Copilot</div>
-            <div style="font-size: 14px;">Ask me anything about Kosovo labor laws or company policies</div>
+        <div class="welcome-wrap">
+            <div class="welcome-emoji"></div>
+            <div class="welcome-title">Welcome to HR Ops Copilot</div>
+            <div class="welcome-sub">Ask me anything about Kosovo labor laws or company policies</div>
         </div>
         """,
             unsafe_allow_html=True,
@@ -431,7 +445,7 @@ with st.container():
             st.markdown(
                 f"""
             <div class="user-message">
-                <div class="message-header">👤 You • {safe_html(timestamp)}</div>
+                <div class="message-header">You - {safe_html(timestamp)}</div>
                 <div class="message-content">{safe_html(message.get("content",""))}</div>
             </div>
             """,
@@ -446,75 +460,77 @@ with st.container():
             deliverable = result.get("deliverable", {}) or {}
             trace = result.get("trace", []) or []
 
-            is_not_found = answer.strip().startswith("Not found in the sources.")
+            is_not_found = answer.strip().startswith("Not found")
 
             st.markdown('<div class="ai-message">', unsafe_allow_html=True)
             st.markdown(
-                f'<div class="message-header">🤖 HR Copilot • {safe_html(timestamp)}</div>',
+                f'<div class="message-header">HR Copilot - {safe_html(timestamp)}</div>',
                 unsafe_allow_html=True,
             )
 
-            st.markdown(render_agent_workflow_inline([1, 2, 3, 4]), unsafe_allow_html=True)
+            # No more Plan/Research/Write/Verify pills here (removed)
 
             if is_not_found:
-                st.markdown(f'<div class="not-found">⚠️ {safe_html(answer)}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="not-found">{safe_html(answer)}</div>', unsafe_allow_html=True)
             else:
-                highlighted_answer = highlight_citations_in_text(answer)
-                st.markdown(f'<div class="message-content">{highlighted_answer}</div>', unsafe_allow_html=True)
+                answer_clean = strip_citations(answer)
+                st.markdown(f'<div class="message-content">{safe_html(answer_clean)}</div>', unsafe_allow_html=True)
 
-            status = str(verdict.get("status", "UNKNOWN")).upper()
-            if status == "PASS":
-                status_class, status_icon = "status-pass", "✓"
-            elif status == "FAIL":
-                status_class, status_icon = "status-fail", "✗"
-            else:
-                status_class, status_icon = "status-unknown", "?"
+                # Sources ONLY at the end
+                if show_sources:
+                    sources = extract_sources(answer)
+                    if sources:
+                        chips = "".join(
+                            f'<span class="source-chip" title="{html.escape(s)}">{html.escape(s)}</span>'
+                            for s in sources
+                        )
+                        st.markdown(
+                            f"""
+                            <div class="sources-row">
+                                <span class="sources-title">Sources</span>
+                                {chips}
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
 
-            st.markdown(
-                f'<div class="status-badge {status_class}">{status_icon} {safe_html(status)}</div>',
-                unsafe_allow_html=True,
-            )
-
-            if show_citations_list and not is_not_found:
-                citations = extract_citations_from_text(answer)
-                if citations:
-                    st.markdown('<div class="citations-section">', unsafe_allow_html=True)
-                    st.markdown('<div class="citations-title">📚 Sources Used</div>', unsafe_allow_html=True)
-                    for cite in citations:
-                        st.markdown(f'<span class="citation-badge">{safe_html(cite)}</span>', unsafe_allow_html=True)
-                    st.markdown("</div>", unsafe_allow_html=True)
+            # No PASS/FAIL badge shown under each answer anymore (removed)
+            # If you want it, keep it ONLY inside Show details.
 
             if show_details:
-                citations_count = len(extract_citations_from_text(answer)) if not is_not_found else 0
+                status = str(verdict.get("status", "UNKNOWN")).upper()
+                citations_count = len(extract_sources(answer)) if not is_not_found else 0
                 sources_count = len(evidence) if isinstance(evidence, list) else 0
 
                 st.markdown(
                     f"""
-                <div class="metrics-row">
-                    <div class="metric-box">
-                        <div class="metric-value">{sources_count}</div>
-                        <div class="metric-label">Sources</div>
-                    </div>
-                    <div class="metric-box">
-                        <div class="metric-value">{citations_count}</div>
-                        <div class="metric-label">Citations</div>
-                    </div>
-                    <div class="metric-box">
-                        <div class="metric-value">{safe_html(status)}</div>
-                        <div class="metric-label">Status</div>
+                <div style="margin-top: 10px; opacity: 0.9;">
+                    <div style="display:flex; gap:8px;">
+                        <div style="flex:1; background:#2d3748; padding:8px; border-radius:8px; text-align:center;">
+                            <div style="font-size:16px; font-weight:800; color:#667eea;">{sources_count}</div>
+                            <div style="font-size:10px; color:#a0aec0; text-transform:uppercase;">Retrieved</div>
+                        </div>
+                        <div style="flex:1; background:#2d3748; padding:8px; border-radius:8px; text-align:center;">
+                            <div style="font-size:16px; font-weight:800; color:#667eea;">{citations_count}</div>
+                            <div style="font-size:10px; color:#a0aec0; text-transform:uppercase;">Cited</div>
+                        </div>
+                        <div style="flex:1; background:#2d3748; padding:8px; border-radius:8px; text-align:center;">
+                            <div style="font-size:16px; font-weight:800; color:#667eea;">{html.escape(status)}</div>
+                            <div style="font-size:10px; color:#a0aec0; text-transform:uppercase;">Verdict</div>
+                        </div>
                     </div>
                 </div>
                 """,
                     unsafe_allow_html=True,
                 )
 
-                with st.expander("📋 Plan"):
+                with st.expander("Plan"):
                     st.markdown(f"**Goal:** {plan.get('goal','')}")
                     st.markdown("**Steps:**")
                     for i, step in enumerate(plan.get("steps", []) or [], 1):
                         st.markdown(f"{i}. {step}")
 
-                with st.expander("🔍 Evidence"):
+                with st.expander("Evidence"):
                     if isinstance(evidence, list):
                         for i, ev in enumerate(evidence, 1):
                             cite = safe_html(ev.get("citation", f"Source {i}"))
@@ -532,12 +548,12 @@ with st.container():
                     else:
                         st.markdown(safe_html(str(evidence)), unsafe_allow_html=True)
 
-                with st.expander("✅ Verification"):
+                with st.expander("Verification"):
                     st.json(verdict)
 
-                with st.expander("📦 Final Deliverable (Executive Summary + Email + Actions + Sources)"):
+                with st.expander("Final Deliverable (Executive Summary + Email + Actions + Sources)"):
                     if deliverable:
-                        st.markdown("### Executive Summary (≤150 words)")
+                        st.markdown("### Executive Summary (<=150 words)")
                         st.write(deliverable.get("executive_summary", ""))
 
                         st.markdown("### Client-ready Email")
@@ -562,40 +578,53 @@ with st.container():
                     else:
                         st.write("No deliverable produced.")
 
-                    with st.expander("📈 Observability (latency + tokens + errors)"):
-                        if trace:
-                            st.table(trace)
-
-                            total_ms = sum(int(x.get("ms", 0) or 0) for x in trace)
-                            total_tokens = sum(int(x.get("total_tokens", 0) or 0) for x in trace)
-
-                            st.markdown(f"**Total latency:** {total_ms} ms")
-                            st.markdown(f"**Total tokens (LLM calls):** {total_tokens}")
-                        else:
-                            st.write("No trace available.")
+                with st.expander("Observability (trace)"):
+                    if trace:
+                        st.table(trace)
+                    else:
+                        st.write("No trace available.")
 
             st.markdown("</div>", unsafe_allow_html=True)
+
+    if st.session_state.inflight_question:
+        st.markdown(
+            f"""
+        <div class="typing-message">
+            <div class="message-header">HR Copilot - {safe_html(st.session_state.assistant_typing_since or "--:--")}</div>
+            <div class="typing-line">
+                Preparing a verified answer
+                <span class="typing-dots"><span></span><span></span><span></span></span>
+            </div>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
 
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ==================== INPUT AREA ====================
-pending = st.session_state.pop("pending_question", None)
-if pending:
-    q = pending.strip()
+queued = st.session_state.pop("pending_question", None)
+if queued and not st.session_state.inflight_question:
+    q = queued.strip()
     if q:
         st.session_state.conversation_history.append({"role": "user", "content": q, "timestamp": now_hhmm()})
-        with st.spinner("🤔 Processing..."):
-            result = run_question(q, k=k, company_name=company_name)
-
-        st.session_state.conversation_history.append({"role": "assistant", "content": result, "timestamp": now_hhmm()})
+        st.session_state.inflight_question = q
+        st.session_state.assistant_typing_since = now_hhmm()
         st.rerun()
 
 if prompt := st.chat_input("Ask your HR question here... (Press Enter to submit)", key="chat_input"):
     q = prompt.strip()
-    if q:
+    if q and not st.session_state.inflight_question:
         st.session_state.conversation_history.append({"role": "user", "content": q, "timestamp": now_hhmm()})
-        with st.spinner("🤔 Processing..."):
-            result = run_question(q, k=k, company_name=company_name)
-
-        st.session_state.conversation_history.append({"role": "assistant", "content": result, "timestamp": now_hhmm()})
+        st.session_state.inflight_question = q
+        st.session_state.assistant_typing_since = now_hhmm()
         st.rerun()
+
+if st.session_state.inflight_question:
+    with st.spinner("Processing..."):
+        result = run_question(st.session_state.inflight_question, k=k)
+
+    st.session_state.conversation_history.append({"role": "assistant", "content": result, "timestamp": now_hhmm()})
+    st.session_state.inflight_question = None
+    st.session_state.assistant_typing_since = None
+    st.rerun()
