@@ -1,0 +1,53 @@
+[
+  {
+    "id": "Q1",
+    "question": "What is the remote work policy?",
+    "expect_found": true
+  },
+  {
+    "id": "Q2",
+    "question": "What are the official holidays in Kosovo?",
+    "expect_found": true
+  },
+  {
+    "id": "Q3",
+    "question": "What is the maximum working hours per week?",
+    "expect_found": true
+  },
+  {
+    "id": "Q4",
+    "question": "What are the safety and health requirements at work?",
+    "expect_found": true
+  },
+  {
+    "id": "Q5",
+    "question": "What does the anti-discrimination law cover?",
+    "expect_found": true
+  },
+  {
+    "id": "Q6",
+    "question": "What are the employee leave types (PTO/leave) in our policies?",
+    "expect_found": true
+  },
+
+  {
+    "id": "Q7",
+    "question": "What is our stock option vesting schedule?",
+    "expect_found": false
+  },
+  {
+    "id": "Q8",
+    "question": "What is our bonus/compensation policy?",
+    "expect_found": false
+  },
+  {
+    "id": "Q9",
+    "question": "Do we reimburse internet/electricity for remote work and how much?",
+    "expect_found": false
+  },
+  {
+    "id": "Q10",
+    "question": "What is our travel expense reimbursement policy?",
+    "expect_found": false
+  }
+]

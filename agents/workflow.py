@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import re
 import time
-from typing import TypedDict, NotRequired
+from typing import NotRequired, TypedDict
 
 from langgraph.graph import StateGraph, START, END
 
@@ -45,6 +46,41 @@ def _apply_company_name(text: str, company_name: str) -> str:
     )
 
 
+def _fix_answer_citations(answer: str, evidence: list[dict]) -> str:
+    """
+    If the LLM outputs citations like [Some_chunk_0000] (chunk-id only),
+    rewrite them into the exact full citation strings that appear in evidence,
+    e.g. [Doc.md | Some_chunk_0000] or [PDF | p.X | ...chunk...]
+    """
+    if not answer:
+        return answer
+
+    # Map chunk_id -> full citation (including brackets)
+    chunk_to_full = {}
+    for ev in evidence or []:
+        md = ev.get("metadata", {}) or {}
+        chunk_id = md.get("chunk_id")
+        full = ev.get("citation")
+        if chunk_id and full:
+            chunk_to_full[str(chunk_id)] = str(full)
+
+    # Replace bracketed citations that are chunk-only
+    def repl(m: re.Match) -> str:
+        inside = m.group(1).strip()
+        # If it already looks like "Doc | chunk", keep it
+        if "|" in inside:
+            return m.group(0)
+
+        # If it matches a known chunk_id, replace whole bracket with full citation
+        if inside in chunk_to_full:
+            return chunk_to_full[inside]
+
+        # Otherwise keep as-is (verifier may fail it)
+        return m.group(0)
+
+    return re.sub(r"\[([^\]]+)\]", repl, answer)
+
+
 def _plan_node(state: WorkflowState) -> dict:
     t0 = time.perf_counter()
     plan = make_plan(state["question"])
@@ -77,7 +113,6 @@ def _no_evidence_node(state: WorkflowState) -> dict:
     ms = int((time.perf_counter() - t0) * 1000)
 
     trace = _trace_append(state, {"agent": "writer", "status": "not_found", "ms": ms})
-    # Must use EXACT rubric phrase
     answer = NOT_FOUND_EXACT
     verdict = {"status": "PASS", "issues": [], "fix_instructions": ""}
 
@@ -90,19 +125,23 @@ def _write_node(state: WorkflowState) -> dict:
     ms = int((time.perf_counter() - t0) * 1000)
 
     draft = _apply_company_name(draft, state["company_name"])
+    draft = _fix_answer_citations(draft, state.get("evidence", []) or [])
+
     trace = _trace_append(state, {"agent": "writer", "status": "ok", "ms": ms})
     return {"draft": draft, "answer": draft, "trace": trace}
 
 
 def _verify_node(state: WorkflowState) -> dict:
     t0 = time.perf_counter()
+
+    draft = state.get("draft", "") or state.get("answer", "")
     verdict = verify_answer(
         state["question"],
         state.get("evidence_pack", ""),
-        state.get("draft", ""),
+        draft,
     )
-    ms = int((time.perf_counter() - t0) * 1000)
 
+    ms = int((time.perf_counter() - t0) * 1000)
     status = str((verdict or {}).get("status", "UNKNOWN")).upper()
     trace = _trace_append(state, {"agent": "verifier", "status": status, "ms": ms})
     return {"verdict": verdict, "trace": trace}
@@ -110,9 +149,10 @@ def _verify_node(state: WorkflowState) -> dict:
 
 def _revise_node(state: WorkflowState) -> dict:
     t0 = time.perf_counter()
+
     feedback = (state.get("verdict") or {}).get(
         "fix_instructions",
-        "Revise to be fully supported by evidence, or return NOT_FOUND.",
+        f"Revise to be fully supported by evidence, or return EXACTLY: {NOT_FOUND_EXACT}",
     )
 
     revised = write_answer(
@@ -120,6 +160,7 @@ def _revise_node(state: WorkflowState) -> dict:
         state.get("evidence_pack", "") + "\n\nVERIFIER FEEDBACK:\n" + feedback,
     )
     revised = _apply_company_name(revised, state["company_name"])
+    revised = _fix_answer_citations(revised, state.get("evidence", []) or [])
 
     ms = int((time.perf_counter() - t0) * 1000)
     trace = _trace_append(state, {"agent": "writer", "status": "revised_once", "ms": ms})
@@ -145,9 +186,6 @@ def _deliver_node(state: WorkflowState) -> dict:
 
     ms = int((time.perf_counter() - t0) * 1000)
     trace = _trace_append(state, {"agent": "deliverer", "status": "ok", "ms": ms})
-
-    # If answer is NOT_FOUND_EXACT, ensure we return the full required phrase + Needed line via deliverable
-    # but keep answer minimal; Streamlit can show deliverable section.
     return {"deliverable": deliverable, "trace": trace}
 
 
@@ -160,7 +198,6 @@ def _route_after_verify(state: WorkflowState) -> str:
     verdict = state.get("verdict") or {}
     status = str(verdict.get("status", "")).upper()
 
-    # One revision only
     if status == "FAIL" and state.get("revision_count", 0) < 1:
         return "revise"
     return "deliver"

@@ -4,6 +4,8 @@ import re
 from datetime import date, timedelta
 from typing import Any
 
+NOT_FOUND_EXACT = "Not found in the sources."
+
 
 # Canonical rubric-friendly message:
 NOT_FOUND_CANON = "Not found in provided sources."
@@ -99,6 +101,8 @@ def build_deliverable(
     )
 
     if is_not_found:
+        sources = []
+
         needed = _infer_needed_info(question)
         final_answer = f"{NOT_FOUND_CANON}\nNeeded: {needed}"
 

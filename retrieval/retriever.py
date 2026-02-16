@@ -32,11 +32,19 @@ class Retriever:
         return resp.data[0].embedding
 
     def search(self, query: str, k: int = 6) -> List[Dict[str, Any]]:
+        import re
+
+        def tok(s: str) -> set[str]:
+            return set(re.findall(r"[a-z0-9]+", (s or "").lower()))
+
         q_emb = self._embed_query(query)
+
+        # Pull more candidates, then rerank (more stable + better precision)
+        candidate_k = max(k * 4, 20)
 
         res = self.collection.query(
             query_embeddings=[q_emb],
-            n_results=k,
+            n_results=candidate_k,
             include=["documents", "metadatas", "distances"],
         )
 
@@ -44,6 +52,7 @@ class Retriever:
         metas = res.get("metadatas", [[]])[0]
         dists = res.get("distances", [[]])[0]
 
+        q_tokens = tok(query)
         out: List[Dict[str, Any]] = []
 
         for i, text in enumerate(docs):
@@ -53,14 +62,32 @@ class Retriever:
             page = md.get("page", None)
 
             citation = Citation(doc_name=doc_name, chunk_id=chunk_id, page=page).format()
+            dist = dists[i] if i < len(dists) else None
+
+            # Lexical signal from doc name + chunk snippet
+            name_tokens = tok(str(doc_name))
+            text_tokens = tok((text or "")[:500])
+            overlap = len(q_tokens & (name_tokens | text_tokens))
+
+            # Higher score = better. (Overlap helps, smaller distance helps.)
+            score = (overlap * 2.0) - (float(dist) if dist is not None else 0.0)
 
             out.append(
                 {
                     "text": text,
                     "citation": citation,
                     "metadata": md,
-                    "distance": dists[i] if i < len(dists) else None,
+                    "distance": dist,
+                    "_score": score,
                 }
             )
+
+        # Sort by score desc, then take top-k
+        out.sort(key=lambda x: x.get("_score", -9999), reverse=True)
+        out = out[:k]
+
+        # Cleanup internal field
+        for x in out:
+            x.pop("_score", None)
 
         return out

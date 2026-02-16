@@ -1,85 +1,92 @@
 from __future__ import annotations
 
-import os
 import re
 from typing import Dict, List
 
-from dotenv import load_dotenv
-from openai import OpenAI
-
-load_dotenv()
-
-NOT_FOUND = "Not found in provided sources."
+from agents.writer import NOT_FOUND
 
 
-def _extract_citations(text: str) -> List[str]:
-    # Extracts things like: [DocName | chunk_id]
-    return re.findall(r"\[[^\]]+\]", text)
+_STOP = {
+    "what", "are", "is", "the", "a", "an", "in", "on", "of", "to", "for", "and", "or",
+    "our", "your", "company", "policy", "please", "tell", "me", "kosovo"
+}
+
+
+def _keywords(question: str) -> List[str]:
+    words = re.findall(r"[a-zA-Z]{4,}", (question or "").lower())
+    kws = [w for w in words if w not in _STOP]
+    # keep top few keywords
+    return kws[:6]
+
+
+def _extract_bracket_blocks(text: str) -> List[str]:
+    # returns full bracket tokens like "[Doc | chunk]"
+    return re.findall(r"\[[^\]]+\]", text or "")
+
+
+def _split_multi_citation_block(block: str) -> List[str]:
+    """
+    If someone outputs: [A | chunk_0, B | chunk_1]  -> INVALID (we want separate brackets)
+    This returns the inside pieces so we can detect & fail it.
+    """
+    inside = block.strip()[1:-1]
+    if "," in inside or ";" in inside:
+        parts = re.split(r"[;,]", inside)
+        return [p.strip() for p in parts if p.strip()]
+    return []
+
+
+def _paragraphs(text: str) -> List[str]:
+    parts = [p.strip() for p in re.split(r"\n\s*\n", text or "") if p.strip()]
+    return parts
 
 
 def verify_answer(question: str, evidence_pack: str, draft: str) -> Dict:
-    """
-    Verifier agent:
-    - Uses simple heuristics + an LLM check.
-    - Returns dict: {status: PASS/FAIL, issues: [...], fix_instructions: "..."}
-    """
-    issues = []
+    clean = (draft or "").strip()
 
-    # Rule: if writer says NOT_FOUND, it must be exact
-    if draft.strip() == NOT_FOUND:
+    # NOT_FOUND is always acceptable
+    if clean == NOT_FOUND or clean.startswith("Not found"):
         return {"status": "PASS", "issues": [], "fix_instructions": ""}
 
-    # Rule: must have at least one citation
-    citations = _extract_citations(draft)
-    if not citations:
-        issues.append("Missing citations in the answer.")
+    # Evidence citations = all bracket citations appearing in evidence_pack
+    evidence_cites = set(_extract_bracket_blocks(evidence_pack))
 
-    # If no evidence, answer should have been NOT_FOUND
-    if not evidence_pack.strip():
-        issues.append(f"No evidence was provided, but the answer was not '{NOT_FOUND}'.")
+    # 1) Relevance guard: if none of the key question words appear in evidence_pack -> must be NOT_FOUND
+    kws = _keywords(question)
+    ev_low = (evidence_pack or "").lower()
+    hits = sum(1 for w in kws if w in ev_low)
+    if kws and hits == 0:
+        msg = (
+            "Evidence appears unrelated to the question keywords. "
+            f"Return EXACTLY: {NOT_FOUND}"
+        )
+        return {"status": "FAIL", "issues": [msg], "fix_instructions": msg}
 
-    # If heuristics already show serious issues, still run LLM verifier (it can give better guidance)
-    model = os.getenv("LLM_MODEL", "gpt-4o-mini")
-    client = OpenAI()
+    # 2) Each paragraph must have a citation
+    for p in _paragraphs(clean):
+        if not _extract_bracket_blocks(p):
+            msg = "Every paragraph must include at least one citation copied EXACTLY from the evidence."
+            return {"status": "FAIL", "issues": [msg], "fix_instructions": msg}
 
-    system = (
-        "You are a strict verifier.\n"
-        "Check the draft ONLY against the evidence excerpts.\n"
-        "Fail if the draft contains claims not supported by evidence.\n"
-        f"Fail if the draft should have said '{NOT_FOUND}'.\n"
-        "Fail if citations are missing or appear invented.\n"
-        "Return a short verdict with PASS/FAIL + concrete fix instructions."
-    )
+    # 3) No multi-citations inside one bracket
+    for b in _extract_bracket_blocks(clean):
+        multi = _split_multi_citation_block(b)
+        if multi:
+            msg = (
+                "Do not put multiple citations inside one bracket. "
+                "Use separate brackets for each citation, and copy them exactly from evidence."
+            )
+            return {"status": "FAIL", "issues": [msg], "fix_instructions": msg}
 
-    user = (
-        f"QUESTION:\n{question}\n\n"
-        f"EVIDENCE:\n{evidence_pack}\n\n"
-        f"DRAFT:\n{draft}\n\n"
-        "Return exactly this format:\n"
-        "STATUS: PASS or FAIL\n"
-        "ISSUES: bullet list\n"
-        "FIX: one paragraph instructions\n"
-    )
+    # 4) Citation integrity: every citation must exist in evidence
+    used = _extract_bracket_blocks(clean)
+    invalid = [c for c in used if c not in evidence_cites]
+    if invalid:
+        msg = (
+            "Invalid / invented citation(s) detected (not present in evidence): "
+            + ", ".join(invalid)
+            + f". Fix citations or return EXACTLY: {NOT_FOUND}"
+        )
+        return {"status": "FAIL", "issues": [msg], "fix_instructions": msg}
 
-    resp = client.chat.completions.create(
-        model=model,
-        temperature=0,
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
-    )
-
-    verdict_text = resp.choices[0].message.content.strip()
-
-    status = "FAIL" if "STATUS: FAIL" in verdict_text.upper() else "PASS"
-
-    # merge heuristic issues if any
-    if issues and status == "PASS":
-        status = "FAIL"
-
-    return {
-        "status": status,
-        "issues": issues + [verdict_text],
-        "fix_instructions": "Use only supported statements from evidence, add citations per paragraph, or return NOT_FOUND.",
-    }
+    return {"status": "PASS", "issues": [], "fix_instructions": ""}

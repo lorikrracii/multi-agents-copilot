@@ -1,0 +1,469 @@
+{
+  "company_name": "KosovoTech LLC",
+  "k": 6,
+  "total": 10,
+  "passed": 8,
+  "failed": 2,
+  "results": [
+    {
+      "id": "Q1",
+      "expect_found": true,
+      "not_found": false,
+      "verdict": "PASS",
+      "ok": true,
+      "out_of_set_citations": [],
+      "sources_count": 6,
+      "trace": [
+        {
+          "agent": "planner",
+          "status": "ok",
+          "ms": 0
+        },
+        {
+          "agent": "research",
+          "status": "ok",
+          "ms": 1486,
+          "k": 6,
+          "sources": [
+            "[Remote_and_Hybrid_Work_Policy.md | Remote_and_Hybrid_Work_Policy_chunk_0000]",
+            "[Remote_and_Hybrid_Work_Policy.md | Remote_and_Hybrid_Work_Policy_chunk_0001]",
+            "[PTO_and_Leave_Policy.md | PTO_and_Leave_Policy_chunk_0000]",
+            "[Recruitment_Equal_Opportunity_Policy.md | Recruitment_Equal_Opportunity_Policy_chunk_0000]",
+            "[KOS_Law_03-L-212_Labour_EN.pdf | p.8 | KOS_Law_03-L-212_Labour_EN_p008_chunk_0000]",
+            "[Employee_Handbook.md | Employee_Handbook_chunk_0000]"
+          ]
+        },
+        {
+          "agent": "writer",
+          "status": "ok",
+          "ms": 10218
+        },
+        {
+          "agent": "verifier",
+          "status": "PASS",
+          "ms": 0
+        },
+        {
+          "agent": "deliverer",
+          "status": "ok",
+          "ms": 0
+        }
+      ]
+    },
+    {
+      "id": "Q2",
+      "expect_found": true,
+      "not_found": true,
+      "verdict": "PASS",
+      "ok": false,
+      "out_of_set_citations": [],
+      "sources_count": 0,
+      "trace": [
+        {
+          "agent": "planner",
+          "status": "ok",
+          "ms": 0
+        },
+        {
+          "agent": "research",
+          "status": "ok",
+          "ms": 2291,
+          "k": 6,
+          "sources": [
+            "[KOS_Constitution_Consolidated_EN.pdf | p.8 | KOS_Constitution_Consolidated_EN_p008_chunk_0000]",
+            "[KOS_Law_03-L-212_Labour_EN.pdf | p.30 | KOS_Law_03-L-212_Labour_EN_p030_chunk_0000]",
+            "[KOS_Constitution_Consolidated_EN.pdf | p.28 | KOS_Constitution_Consolidated_EN_p028_chunk_0000]",
+            "[KOS_Law_03-L-212_Labour_EN.pdf | p.11 | KOS_Law_03-L-212_Labour_EN_p011_chunk_0001]",
+            "[KOS_Constitution_Consolidated_EN.pdf | p.9 | KOS_Constitution_Consolidated_EN_p009_chunk_0000]",
+            "[KOS_Constitution_Consolidated_EN.pdf | p.1 | KOS_Constitution_Consolidated_EN_p001_chunk_0000]"
+          ]
+        },
+        {
+          "agent": "writer",
+          "status": "ok",
+          "ms": 1251
+        },
+        {
+          "agent": "verifier",
+          "status": "PASS",
+          "ms": 0
+        },
+        {
+          "agent": "deliverer",
+          "status": "ok",
+          "ms": 0
+        }
+      ]
+    },
+    {
+      "id": "Q3",
+      "expect_found": true,
+      "not_found": false,
+      "verdict": "PASS",
+      "ok": true,
+      "out_of_set_citations": [],
+      "sources_count": 6,
+      "trace": [
+        {
+          "agent": "planner",
+          "status": "ok",
+          "ms": 0
+        },
+        {
+          "agent": "research",
+          "status": "ok",
+          "ms": 874,
+          "k": 6,
+          "sources": [
+            "[KOS_Law_03-L-212_Labour_EN.pdf | p.9 | KOS_Law_03-L-212_Labour_EN_p009_chunk_0001]",
+            "[KOS_Law_03-L-212_Labour_EN.pdf | p.9 | KOS_Law_03-L-212_Labour_EN_p009_chunk_0000]",
+            "[KOS_Law_03-L-212_Labour_EN.pdf | p.8 | KOS_Law_03-L-212_Labour_EN_p008_chunk_0000]",
+            "[KOS_Law_03-L-212_Labour_EN.pdf | p.8 | KOS_Law_03-L-212_Labour_EN_p008_chunk_0001]",
+            "[KOS_Law_03-L-212_Labour_EN.pdf | p.18 | KOS_Law_03-L-212_Labour_EN_p018_chunk_0000]",
+            "[Remote_and_Hybrid_Work_Policy.md | Remote_and_Hybrid_Work_Policy_chunk_0000]"
+          ]
+        },
+        {
+          "agent": "writer",
+          "status": "ok",
+          "ms": 5544
+        },
+        {
+          "agent": "verifier",
+          "status": "PASS",
+          "ms": 0
+        },
+        {
+          "agent": "deliverer",
+          "status": "ok",
+          "ms": 0
+        }
+      ]
+    },
+    {
+      "id": "Q4",
+      "expect_found": true,
+      "not_found": false,
+      "verdict": "PASS",
+      "ok": true,
+      "out_of_set_citations": [],
+      "sources_count": 6,
+      "trace": [
+        {
+          "agent": "planner",
+          "status": "ok",
+          "ms": 0
+        },
+        {
+          "agent": "research",
+          "status": "ok",
+          "ms": 716,
+          "k": 6,
+          "sources": [
+            "[KOS_Law_03-L-212_Labour_EN.pdf | p.14 | KOS_Law_03-L-212_Labour_EN_p014_chunk_0000]",
+            "[KOS_Law_03-L-212_Labour_EN.pdf | p.14 | KOS_Law_03-L-212_Labour_EN_p014_chunk_0001]",
+            "[KOS_Law_03-L-212_Labour_EN.pdf | p.15 | KOS_Law_03-L-212_Labour_EN_p015_chunk_0000]",
+            "[Employee_Handbook.md | Employee_Handbook_chunk_0001]",
+            "[Remote_and_Hybrid_Work_Policy.md | Remote_and_Hybrid_Work_Policy_chunk_0001]",
+            "[Employee_Handbook.md | Employee_Handbook_chunk_0000]"
+          ]
+        },
+        {
+          "agent": "writer",
+          "status": "ok",
+          "ms": 10793
+        },
+        {
+          "agent": "verifier",
+          "status": "PASS",
+          "ms": 0
+        },
+        {
+          "agent": "deliverer",
+          "status": "ok",
+          "ms": 0
+        }
+      ]
+    },
+    {
+      "id": "Q5",
+      "expect_found": true,
+      "not_found": false,
+      "verdict": "PASS",
+      "ok": true,
+      "out_of_set_citations": [],
+      "sources_count": 6,
+      "trace": [
+        {
+          "agent": "planner",
+          "status": "ok",
+          "ms": 0
+        },
+        {
+          "agent": "research",
+          "status": "ok",
+          "ms": 690,
+          "k": 6,
+          "sources": [
+            "[KOS_Law_05-L-021_Anti_Discrimination_EN.pdf | p.3 | KOS_Law_05-L-021_Anti_Discrimination_EN_p003_chunk_0001]",
+            "[KOS_Law_05-L-021_Anti_Discrimination_EN.pdf | p.4 | KOS_Law_05-L-021_Anti_Discrimination_EN_p004_chunk_0000]",
+            "[KOS_Law_05-L-021_Anti_Discrimination_EN.pdf | p.1 | KOS_Law_05-L-021_Anti_Discrimination_EN_p001_chunk_0000]",
+            "[KOS_Law_05-L-021_Anti_Discrimination_EN.pdf | p.3 | KOS_Law_05-L-021_Anti_Discrimination_EN_p003_chunk_0000]",
+            "[KOS_Law_05-L-021_Anti_Discrimination_EN.pdf | p.11 | KOS_Law_05-L-021_Anti_Discrimination_EN_p011_chunk_0000]",
+            "[KOS_Law_05-L-021_Anti_Discrimination_EN.pdf | p.7 | KOS_Law_05-L-021_Anti_Discrimination_EN_p007_chunk_0000]"
+          ]
+        },
+        {
+          "agent": "writer",
+          "status": "ok",
+          "ms": 6923
+        },
+        {
+          "agent": "verifier",
+          "status": "PASS",
+          "ms": 0
+        },
+        {
+          "agent": "deliverer",
+          "status": "ok",
+          "ms": 0
+        }
+      ]
+    },
+    {
+      "id": "Q6",
+      "expect_found": true,
+      "not_found": false,
+      "verdict": "FAIL",
+      "ok": false,
+      "out_of_set_citations": [],
+      "sources_count": 6,
+      "trace": [
+        {
+          "agent": "planner",
+          "status": "ok",
+          "ms": 0
+        },
+        {
+          "agent": "research",
+          "status": "ok",
+          "ms": 737,
+          "k": 6,
+          "sources": [
+            "[PTO_and_Leave_Policy.md | PTO_and_Leave_Policy_chunk_0000]",
+            "[PTO_and_Leave_Policy.md | PTO_and_Leave_Policy_chunk_0001]",
+            "[KOS_Law_03-L-212_Labour_EN.pdf | p.12 | KOS_Law_03-L-212_Labour_EN_p012_chunk_0000]",
+            "[KOS_Law_03-L-212_Labour_EN.pdf | p.11 | KOS_Law_03-L-212_Labour_EN_p011_chunk_0000]",
+            "[Employee_Handbook.md | Employee_Handbook_chunk_0000]",
+            "[Complaints_and_Disciplinary_Procedure.md | Complaints_and_Disciplinary_Procedure_chunk_0000]"
+          ]
+        },
+        {
+          "agent": "writer",
+          "status": "ok",
+          "ms": 4377
+        },
+        {
+          "agent": "verifier",
+          "status": "FAIL",
+          "ms": 0
+        },
+        {
+          "agent": "writer",
+          "status": "revised_once",
+          "ms": 5556
+        },
+        {
+          "agent": "verifier",
+          "status": "FAIL",
+          "ms": 0
+        },
+        {
+          "agent": "deliverer",
+          "status": "ok",
+          "ms": 0
+        }
+      ]
+    },
+    {
+      "id": "Q7",
+      "expect_found": false,
+      "not_found": true,
+      "verdict": "PASS",
+      "ok": true,
+      "out_of_set_citations": [],
+      "sources_count": 0,
+      "trace": [
+        {
+          "agent": "planner",
+          "status": "ok",
+          "ms": 0
+        },
+        {
+          "agent": "research",
+          "status": "ok",
+          "ms": 700,
+          "k": 6,
+          "sources": [
+            "[KOS_Law_03-L-212_Labour_EN.pdf | p.12 | KOS_Law_03-L-212_Labour_EN_p012_chunk_0000]",
+            "[Complaints_and_Disciplinary_Procedure.md | Complaints_and_Disciplinary_Procedure_chunk_0001]",
+            "[PTO_and_Leave_Policy.md | PTO_and_Leave_Policy_chunk_0001]",
+            "[KOS_Law_03-L-212_Labour_EN.pdf | p.11 | KOS_Law_03-L-212_Labour_EN_p011_chunk_0000]",
+            "[Employee_Handbook.md | Employee_Handbook_chunk_0000]",
+            "[Remote_and_Hybrid_Work_Policy.md | Remote_and_Hybrid_Work_Policy_chunk_0000]"
+          ]
+        },
+        {
+          "agent": "writer",
+          "status": "ok",
+          "ms": 1320
+        },
+        {
+          "agent": "verifier",
+          "status": "PASS",
+          "ms": 0
+        },
+        {
+          "agent": "deliverer",
+          "status": "ok",
+          "ms": 0
+        }
+      ]
+    },
+    {
+      "id": "Q8",
+      "expect_found": false,
+      "not_found": true,
+      "verdict": "PASS",
+      "ok": true,
+      "out_of_set_citations": [],
+      "sources_count": 0,
+      "trace": [
+        {
+          "agent": "planner",
+          "status": "ok",
+          "ms": 0
+        },
+        {
+          "agent": "research",
+          "status": "ok",
+          "ms": 546,
+          "k": 6,
+          "sources": [
+            "[KOS_Law_03-L-212_Labour_EN.pdf | p.20 | KOS_Law_03-L-212_Labour_EN_p020_chunk_0000]",
+            "[KOS_Law_03-L-212_Labour_EN.pdf | p.19 | KOS_Law_03-L-212_Labour_EN_p019_chunk_0000]",
+            "[Recruitment_Equal_Opportunity_Policy.md | Recruitment_Equal_Opportunity_Policy_chunk_0000]",
+            "[Remote_and_Hybrid_Work_Policy.md | Remote_and_Hybrid_Work_Policy_chunk_0000]",
+            "[Employee_Handbook.md | Employee_Handbook_chunk_0000]",
+            "[Complaints_and_Disciplinary_Procedure.md | Complaints_and_Disciplinary_Procedure_chunk_0000]"
+          ]
+        },
+        {
+          "agent": "writer",
+          "status": "ok",
+          "ms": 1793
+        },
+        {
+          "agent": "verifier",
+          "status": "PASS",
+          "ms": 0
+        },
+        {
+          "agent": "deliverer",
+          "status": "ok",
+          "ms": 0
+        }
+      ]
+    },
+    {
+      "id": "Q9",
+      "expect_found": false,
+      "not_found": true,
+      "verdict": "PASS",
+      "ok": true,
+      "out_of_set_citations": [],
+      "sources_count": 0,
+      "trace": [
+        {
+          "agent": "planner",
+          "status": "ok",
+          "ms": 0
+        },
+        {
+          "agent": "research",
+          "status": "ok",
+          "ms": 639,
+          "k": 6,
+          "sources": [
+            "[Remote_and_Hybrid_Work_Policy.md | Remote_and_Hybrid_Work_Policy_chunk_0001]",
+            "[Remote_and_Hybrid_Work_Policy.md | Remote_and_Hybrid_Work_Policy_chunk_0000]",
+            "[KOS_Law_03-L-212_Labour_EN.pdf | p.20 | KOS_Law_03-L-212_Labour_EN_p020_chunk_0000]",
+            "[KOS_Law_03-L-212_Labour_EN.pdf | p.8 | KOS_Law_03-L-212_Labour_EN_p008_chunk_0000]",
+            "[KOS_Law_03-L-212_Labour_EN.pdf | p.17 | KOS_Law_03-L-212_Labour_EN_p017_chunk_0001]",
+            "[PTO_and_Leave_Policy.md | PTO_and_Leave_Policy_chunk_0000]"
+          ]
+        },
+        {
+          "agent": "writer",
+          "status": "ok",
+          "ms": 3145
+        },
+        {
+          "agent": "verifier",
+          "status": "PASS",
+          "ms": 0
+        },
+        {
+          "agent": "deliverer",
+          "status": "ok",
+          "ms": 0
+        }
+      ]
+    },
+    {
+      "id": "Q10",
+      "expect_found": false,
+      "not_found": true,
+      "verdict": "PASS",
+      "ok": true,
+      "out_of_set_citations": [],
+      "sources_count": 0,
+      "trace": [
+        {
+          "agent": "planner",
+          "status": "ok",
+          "ms": 0
+        },
+        {
+          "agent": "research",
+          "status": "ok",
+          "ms": 716,
+          "k": 6,
+          "sources": [
+            "[Remote_and_Hybrid_Work_Policy.md | Remote_and_Hybrid_Work_Policy_chunk_0000]",
+            "[PTO_and_Leave_Policy.md | PTO_and_Leave_Policy_chunk_0000]",
+            "[Remote_and_Hybrid_Work_Policy.md | Remote_and_Hybrid_Work_Policy_chunk_0001]",
+            "[Recruitment_Equal_Opportunity_Policy.md | Recruitment_Equal_Opportunity_Policy_chunk_0000]",
+            "[Employee_Handbook.md | Employee_Handbook_chunk_0000]",
+            "[Complaints_and_Disciplinary_Procedure.md | Complaints_and_Disciplinary_Procedure_chunk_0000]"
+          ]
+        },
+        {
+          "agent": "writer",
+          "status": "ok",
+          "ms": 1645
+        },
+        {
+          "agent": "verifier",
+          "status": "PASS",
+          "ms": 0
+        },
+        {
+          "agent": "deliverer",
+          "status": "ok",
+          "ms": 0
+        }
+      ]
+    }
+  ]
+}
