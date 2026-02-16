@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, List, Tuple, Set, Optional
+from typing import Any, Dict, List, Tuple, Set, Optional
 
 from agents.deliverer import NOT_FOUND_EXACT  # "Not found in the sources."
 
@@ -72,6 +72,17 @@ def _paragraph_has_citation(p: str) -> bool:
     return bool(re.search(r"\[[^\]]+\]", p or ""))
 
 
+def _is_not_found(text: str) -> bool:
+    """
+    Accept all your project variants:
+    - NOT_FOUND_EXACT: "Not found in the sources."
+    - "Not found in provided sources."
+    - anything starting with "Not found in" (covers deliverer "Needed:" line too)
+    """
+    t = (text or "").strip()
+    return t == NOT_FOUND_EXACT or t.startswith("Not found in")
+
+
 def _citation_integrity_check(answer: str, evidence_pack: str) -> Tuple[bool, str]:
     """
     Validates:
@@ -81,7 +92,7 @@ def _citation_integrity_check(answer: str, evidence_pack: str) -> Tuple[bool, st
     text = (answer or "").strip()
 
     # NOT_FOUND is always acceptable
-    if text == NOT_FOUND_EXACT:
+    if _is_not_found(text):
         return True, ""
 
     # Must contain at least one citation somewhere
@@ -107,7 +118,12 @@ def _citation_integrity_check(answer: str, evidence_pack: str) -> Tuple[bool, st
     return True, ""
 
 
-def verify_answer(question: str, evidence_pack: str, draft: str) -> Dict:
+def verify_answer(
+    question: str,
+    evidence_pack: str,
+    draft: str,
+    evidence_list: Optional[List[Dict[str, Any]]] = None,  # <-- added, so workflow kwarg won't crash
+) -> Dict:
     """
     Verifier agent:
     - No hallucinations: citations must map to evidence chunks.
