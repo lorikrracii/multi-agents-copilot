@@ -121,13 +121,27 @@ def _no_evidence_node(state: WorkflowState) -> dict:
 
 def _write_node(state: WorkflowState) -> dict:
     t0 = time.perf_counter()
-    draft = write_answer(state["question"], state.get("evidence_pack", ""))
-    ms = int((time.perf_counter() - t0) * 1000)
 
+    draft, meta = write_answer(state["question"], state.get("evidence_pack", ""), return_meta=True)
+
+    ms = int((time.perf_counter() - t0) * 1000)
     draft = _apply_company_name(draft, state["company_name"])
+
     draft = _fix_answer_citations(draft, state.get("evidence", []) or [])
 
-    trace = _trace_append(state, {"agent": "writer", "status": "ok", "ms": ms})
+
+    trace = _trace_append(
+        state,
+        {
+            "agent": "writer",
+            "status": "ok",
+            "ms": ms,
+            "model": meta.get("model"),
+            "prompt_tokens": meta.get("prompt_tokens"),
+            "completion_tokens": meta.get("completion_tokens"),
+            "total_tokens": meta.get("total_tokens"),
+        },
+    )
     return {"draft": draft, "answer": draft, "trace": trace}
 
 
@@ -138,7 +152,8 @@ def _verify_node(state: WorkflowState) -> dict:
     verdict = verify_answer(
         state["question"],
         state.get("evidence_pack", ""),
-        draft,
+        state.get("draft", ""),
+        evidence_list=state.get("evidence", []) or [],
     )
 
     ms = int((time.perf_counter() - t0) * 1000)
@@ -149,21 +164,34 @@ def _verify_node(state: WorkflowState) -> dict:
 
 def _revise_node(state: WorkflowState) -> dict:
     t0 = time.perf_counter()
-
     feedback = (state.get("verdict") or {}).get(
         "fix_instructions",
-        f"Revise to be fully supported by evidence, or return EXACTLY: {NOT_FOUND_EXACT}",
+        "Revise to be fully supported by evidence, or return NOT_FOUND.",
     )
 
-    revised = write_answer(
+    revised, meta = write_answer(
         state["question"],
         state.get("evidence_pack", "") + "\n\nVERIFIER FEEDBACK:\n" + feedback,
+        return_meta=True,
     )
     revised = _apply_company_name(revised, state["company_name"])
+    
     revised = _fix_answer_citations(revised, state.get("evidence", []) or [])
 
+
     ms = int((time.perf_counter() - t0) * 1000)
-    trace = _trace_append(state, {"agent": "writer", "status": "revised_once", "ms": ms})
+    trace = _trace_append(
+        state,
+        {
+            "agent": "writer",
+            "status": "revised_once",
+            "ms": ms,
+            "model": meta.get("model"),
+            "prompt_tokens": meta.get("prompt_tokens"),
+            "completion_tokens": meta.get("completion_tokens"),
+            "total_tokens": meta.get("total_tokens"),
+        },
+    )
 
     return {
         "revision_count": state["revision_count"] + 1,

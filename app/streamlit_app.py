@@ -356,6 +356,8 @@ with st.sidebar:
     st.markdown("### ⚙️ Settings")
 
     company_name = st.text_input("🏢 Company name", value="KosovoTech LLC")
+    output_mode = st.radio("🧾 Output mode", ["Executive", "Analyst"], horizontal=True, index=0)
+
     k = st.slider("📊 Retrieved chunks", min_value=3, max_value=10, value=6)
     show_details = st.checkbox("🔍 Show details", value=False)
     show_citations_list = st.checkbox("📚 Show citations", value=True)
@@ -560,11 +562,17 @@ with st.container():
                     else:
                         st.write("No deliverable produced.")
 
-                with st.expander("🧭 Agent Trace / Logs"):
-                    if trace:
-                        st.table(trace)
-                    else:
-                        st.write("No trace available.")
+                    with st.expander("📈 Observability (latency + tokens + errors)"):
+                        if trace:
+                            st.table(trace)
+
+                            total_ms = sum(int(x.get("ms", 0) or 0) for x in trace)
+                            total_tokens = sum(int(x.get("total_tokens", 0) or 0) for x in trace)
+
+                            st.markdown(f"**Total latency:** {total_ms} ms")
+                            st.markdown(f"**Total tokens (LLM calls):** {total_tokens}")
+                        else:
+                            st.write("No trace available.")
 
             st.markdown("</div>", unsafe_allow_html=True)
 
