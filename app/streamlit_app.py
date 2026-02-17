@@ -2,9 +2,10 @@ import sys
 from pathlib import Path
 import re
 import html
+import textwrap
 from datetime import datetime
 
-# Ensure repo root is on PYTHONPATH (fixes: No module named 'agents')
+# ==================== PATH SETUP ====================
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -17,281 +18,272 @@ st.set_page_config(
     page_title="Kosovo HR Ops Copilot",
     layout="wide",
     initial_sidebar_state="expanded",
+    page_icon="🤖",
 )
 
-# ==================== CUSTOM CSS ====================
+# ==================== HTML HELPER (fixes stray </div> due to Markdown indentation) ====================
+def html_block(s: str) -> str:
+    return textwrap.dedent(s).strip()
+
+# ==================== CONSTANTS ====================
+NOT_FOUND = "Not found in provided sources."
+COMPANY_NAME = "KosovoTech LLC"
+
+# ==================== DESIGN & CSS (your remodeled UI) ====================
 st.markdown(
-    """
-<style>
-    /* Main app styling */
-    .main { background: #0f1419; }
-    .stApp { background: #0f1419; }
+    html_block(
+        """
+        <style>
+            /* --- GLOBAL RESET & THEME --- */
+            .stApp { background-color: #0f172a; } /* Slate 900 */
 
-    .block-container {
-        padding-top: 1.2rem;
-        padding-bottom: 1rem;
-        max-width: 1000px;
-    }
+            .block-container {
+                padding-top: 2rem;
+                padding-bottom: 8rem; /* Space for input bar */
+                max-width: 900px;
+            }
 
-    /* Messages container (min-height is overridden dynamically below) */
-    .messages-container {
-        padding: 20px;
-        margin-bottom: 120px;
-    }
+            h1, h2, h3, p, div {
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            }
 
-    /* User message */
-    .user-message {
-        background: #2d3748;
-        color: #e2e8f0;
-        padding: 16px 20px;
-        border-radius: 16px;
-        margin: 16px 0;
-        margin-left: 20%;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        font-size: 15px;
-        line-height: 1.6;
-        animation: slideInRight 0.3s ease;
-    }
+            /* --- CHAT MESSAGE CONTAINERS --- */
+            .chat-container {
+                display: flex;
+                flex-direction: column;
+                gap: 24px;
+            }
 
-    @keyframes slideInRight {
-        from { opacity: 0; transform: translateX(20px); }
-        to { opacity: 1; transform: translateX(0); }
-    }
+            /* USER MESSAGE: Clean Blue Bubble, Aligned Right */
+            .message-user-wrap {
+                display: flex;
+                justify-content: flex-end;
+                align-items: flex-end;
+                margin-bottom: 24px;
+                animation: fadeIn 0.3s ease-out;
+            }
+            .user-content {
+                background: linear-gradient(145deg, #3b82f6, #2563eb);
+                color: #eff6ff;
+                padding: 16px 20px;
+                border-radius: 20px 20px 4px 20px;
+                font-size: 15px;
+                line-height: 1.6;
+                box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+                max-width: 80%;
+                word-wrap: break-word;
+                overflow-wrap: anywhere;
+                white-space: normal;
+            }
+            .user-header {
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                color: rgba(255,255,255,0.7);
+                margin-bottom: 4px;
+                text-align: right;
+            }
 
-    @keyframes slideInLeft {
-        from { opacity: 0; transform: translateX(-20px); }
-        to { opacity: 1; transform: translateX(0); }
-    }
+            /* AI MESSAGE: Clean Dark Card, Aligned Left */
+            .message-ai-wrap {
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: flex-start;
+                margin-bottom: 24px;
+                animation: fadeIn 0.3s ease-out;
+            }
+            .ai-content {
+                background: #1e293b; /* Slate 800 */
+                border: 1px solid #334155;
+                color: #e2e8f0;
+                padding: 24px 24px;
+                border-radius: 20px 20px 20px 4px;
+                font-size: 16px;
+                line-height: 1.8;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+                max-width: 90%;
+                margin-left: 0;
+                word-wrap: break-word;
+                overflow-wrap: anywhere;
+                white-space: normal;
+            }
+            .ai-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                color: #94a3b8;
+                margin-bottom: 12px;
+                width: 100%;
+            }
+            .ai-header-left {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .ai-header-right {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+            }
 
-    /* AI message */
-    .ai-message {
-        background: #1a202c;
-        border: 1px solid #2d3748;
-        color: #e2e8f0;
-        padding: 20px;
-        border-radius: 16px;
-        margin: 16px 0;
-        margin-right: 20%;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        animation: slideInLeft 0.3s ease;
-    }
+            /* Verdict pill */
+            .verdict-pill {
+                font-size: 10px;
+                font-weight: 800;
+                padding: 4px 10px;
+                border-radius: 999px;
+                border: 1px solid transparent;
+                letter-spacing: 0.6px;
+            }
+            .verdict-pass {
+                color: #dcfce7;
+                background: rgba(34, 197, 94, 0.15);
+                border-color: rgba(34, 197, 94, 0.35);
+            }
+            .verdict-fail {
+                color: #fee2e2;
+                background: rgba(239, 68, 68, 0.12);
+                border-color: rgba(239, 68, 68, 0.35);
+            }
+            .verdict-unknown {
+                color: #e2e8f0;
+                background: rgba(148, 163, 184, 0.12);
+                border-color: rgba(148, 163, 184, 0.3);
+            }
 
-    .message-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 8px;
-        font-weight: 600;
-        font-size: 11px;
-        color: #718096;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
+            /* --- SOURCE TAGS --- */
+            .sources-row {
+                margin-top: 16px;
+                padding-top: 12px;
+                border-top: 1px solid #334155;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                align-items: center;
+            }
+            .sources-label {
+                font-size: 11px;
+                font-weight: 700;
+                color: #64748b;
+                text-transform: uppercase;
+                margin-right: 6px;
+            }
+            .source-chip {
+                background: #0f172a;
+                border: 1px solid #475569;
+                color: #cbd5e1;
+                padding: 4px 12px;
+                border-radius: 9999px;
+                font-size: 11px;
+                font-weight: 600;
+                transition: all 0.2s ease;
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                max-width: 100%;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .source-chip:hover {
+                border-color: #3b82f6;
+                color: #60a5fa;
+                transform: translateY(-1px);
+            }
 
-    /* MAIN ANSWER */
-    .message-content {
-        font-size: 18px !important;
-        line-height: 1.8 !important;
-        color: #f7fafc !important;
-        font-weight: 500 !important;
-        margin: 10px 0 8px 0 !important;
-        padding: 8px 0 !important;
-        word-wrap: break-word;
-        overflow-wrap: anywhere;
-        white-space: normal;
-    }
+            /* --- ERROR/NOT FOUND --- */
+            .not-found {
+                border-left: 4px solid #f59e0b;
+                background: rgba(245, 158, 11, 0.1);
+                color: #fcd34d;
+                padding: 16px;
+                border-radius: 8px;
+                font-weight: 600;
+                margin-top: 8px;
+            }
 
-    /* Not found message */
-    .not-found {
-        background: rgba(237, 137, 54, 0.10);
-        border: 1px solid #ed8936;
-        color: #fbd38d;
-        padding: 14px 18px;
-        border-radius: 12px;
-        font-weight: 650;
-        text-align: center;
-        font-size: 15px;
-        margin: 10px 0 6px 0;
-    }
+            /* --- TYPING INDICATOR --- */
+            .typing-box {
+                background: #1e293b;
+                border: 1px dashed #334155;
+                padding: 16px;
+                border-radius: 12px;
+                color: #94a3b8;
+                font-size: 14px;
+                display: inline-flex;
+                align-items: center;
+                gap: 10px;
+                max-width: 360px;
+                animation: pulse 2s infinite;
+            }
+            .typing-dots {
+                display: inline-flex;
+                gap: 4px;
+            }
+            .typing-dots span {
+                width: 6px;
+                height: 6px;
+                border-radius: 999px;
+                background: #94a3b8;
+                opacity: 0.35;
+                animation: dotPulse 1.2s infinite ease-in-out;
+            }
+            .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+            .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
 
-    /* Sources at end of answer */
-    .sources-row {
-        margin-top: 10px;
-        padding-top: 10px;
-        border-top: 1px solid #2d3748;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        align-items: center;
-    }
+            /* --- ANIMATIONS --- */
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            @keyframes pulse {
+                0% { opacity: 0.8; }
+                50% { opacity: 1; }
+                100% { opacity: 0.8; }
+            }
+            @keyframes dotPulse {
+                0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+                40% { opacity: 1; transform: translateY(-2px); }
+            }
 
-    .sources-title {
-        font-size: 11px;
-        color: #a0aec0;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-right: 6px;
-        opacity: 0.9;
-    }
+            /* --- STREAMLIT OVERRIDES --- */
+            .stChatInput {
+                background-color: #0f172a !important;
+                border-top: 1px solid #334155 !important;
+            }
+            .stChatInput textarea {
+                background: #1e293b !important;
+                color: #f1f5f9 !important;
+                border: 1px solid #475569 !important;
+                border-radius: 12px !important;
+            }
+            .stChatInput textarea:focus {
+                border-color: #3b82f6 !important;
+                box-shadow: 0 0 0 2px rgba(59,130,246,0.3) !important;
+            }
 
-    .source-chip {
-        display: inline-flex;
-        align-items: center;
-        max-width: 100%;
-        background: #2d3748;
-        border: 1px solid #4a5568;
-        color: #e2e8f0;
-        padding: 4px 10px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 600;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    /* Streamlit chat input styling */
-    .stChatInput { background: #1a202c !important; border-top: 2px solid #2d3748 !important; }
-    .stChatInput textarea {
-        background: #2d3748 !important;
-        color: #e2e8f0 !important;
-        border: 2px solid #4a5568 !important;
-        border-radius: 12px !important;
-        font-size: 15px !important;
-    }
-    .stChatInput textarea:focus {
-        border-color: #667eea !important;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2) !important;
-    }
-
-    /* Button styling */
-    .stButton>button {
-        background: #667eea !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 10px !important;
-        padding: 10px 24px !important;
-        font-weight: 600 !important;
-        font-size: 14px !important;
-        transition: all 0.2s ease !important;
-    }
-    .stButton>button:hover { background: #5a67d8 !important; transform: translateY(-1px); }
-
-    /* Sidebar */
-    [data-testid="stSidebar"] { background: #1a202c; }
-    [data-testid="stSidebar"] .element-container { color: #e2e8f0; }
-
-    /* Info box */
-    .info-box {
-        background: #2d3748;
-        border-left: 4px solid #667eea;
-        padding: 14px;
-        border-radius: 8px;
-        margin: 12px 0;
-        font-size: 13px;
-        color: #cbd5e0;
-        line-height: 1.6;
-    }
-
-    /* Hide Streamlit elements */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    .stDeployButton {display: none;}
-
-    /* Header */
-    .chat-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 18px 20px;
-        border-radius: 12px;
-        margin-bottom: 0px;
-        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
-    }
-    .chat-title { color: white; font-size: 24px; font-weight: 700; margin: 0; }
-    .chat-subtitle { color: rgba(255, 255, 255, 0.9); font-size: 14px; margin-top: 2px; }
-
-    /* Welcome (transparent card inside messages container) */
-    .welcome-wrap {
-        text-align: center;
-        padding: 18px 14px;
-        margin: 8px 0 2px 0;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid #2d3748;
-        border-radius: 16px;
-        color: #a0aec0;
-    }
-    .welcome-emoji { font-size: 34px; margin-bottom: 6px; }
-    .welcome-title { font-size: 18px; font-weight: 650; margin-bottom: 4px; color: #e2e8f0; }
-    .welcome-sub { font-size: 13px; }
-
-    /* Evidence card */
-    .evidence-card {
-        background: #2d3748;
-        border: 1px solid #4a5568;
-        border-radius: 8px;
-        padding: 10px;
-        margin: 6px 0;
-        font-size: 12px;
-    }
-    .evidence-header { color: #a0aec0; font-weight: 600; margin-bottom: 4px; font-size: 11px; }
-    .evidence-text { color: #cbd5e0; line-height: 1.5; font-size: 12px; }
-
-    /* Visible assistant "thinking" bubble */
-    .typing-message {
-        background: #1a202c;
-        border: 1px dashed #4a5568;
-        color: #e2e8f0;
-        padding: 18px 20px;
-        border-radius: 16px;
-        margin: 16px 0;
-        margin-right: 20%;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-        animation: slideInLeft 0.25s ease;
-    }
-    .typing-line {
-        font-size: 15px;
-        color: #cbd5e0;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-top: 2px;
-    }
-    .typing-dots {
-        display: inline-flex;
-        gap: 4px;
-    }
-    .typing-dots span {
-        width: 6px;
-        height: 6px;
-        border-radius: 999px;
-        background: #a0aec0;
-        opacity: 0.35;
-        animation: dotPulse 1.2s infinite ease-in-out;
-    }
-    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes dotPulse {
-        0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
-        40% { opacity: 1; transform: translateY(-2px); }
-    }
-</style>
-""",
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            .stDeployButton {display: none;}
+        </style>
+        """
+    ),
     unsafe_allow_html=True,
 )
 
-# ==================== HELPER FUNCTIONS ====================
-
-
+# ==================== HELPERS ====================
 def now_hhmm() -> str:
     return datetime.now().strftime("%H:%M")
-
 
 def safe_html(text: str) -> str:
     if text is None:
         return ""
     return html.escape(str(text)).replace("\n", "<br>")
-
 
 def strip_citations(text: str) -> str:
     """Remove [ ... ] citations from answer so sources can be shown only at the end."""
@@ -299,10 +291,8 @@ def strip_citations(text: str) -> str:
         return ""
     cleaned = re.sub(r"\s*\[[^\]]+\]\s*", " ", text)
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
-    # Fix spacing before punctuation
     cleaned = re.sub(r"\s+([.,;:!?])", r"\1", cleaned)
     return cleaned
-
 
 def extract_sources(text: str) -> list[str]:
     """
@@ -326,17 +316,38 @@ def extract_sources(text: str) -> list[str]:
                 out.append(p)
     return out
 
-
-# Fixed company name (removed from sidebar as requested)
-COMPANY_NAME = "KosovoTech LLC"
-
+def verdict_class(status: str) -> str:
+    s = (status or "").upper()
+    if s == "PASS":
+        return "verdict-pass"
+    if s == "FAIL":
+        return "verdict-fail"
+    return "verdict-unknown"
 
 def run_question(question: str, k: int):
+    """
+    UI wrapper so the app doesn't crash.
+    IMPORTANT: keep strict NOT_FOUND string.
+    """
     try:
+        # If your workflow accepts company_name:
         return answer_question(question, k=k, company_name=COMPANY_NAME)
+    except TypeError:
+        # Backward compat if answer_question doesn't accept company_name
+        try:
+            return answer_question(question, k=k)
+        except Exception as e:
+            return {
+                "answer": NOT_FOUND,
+                "verdict": {"status": "FAIL", "error": str(e)},
+                "evidence": [],
+                "plan": {"goal": "Handle error", "steps": ["Caught exception in UI wrapper."]},
+                "deliverable": {},
+                "trace": [],
+            }
     except Exception as e:
         return {
-            "answer": "Not found in the sources.",
+            "answer": NOT_FOUND,
             "verdict": {"status": "FAIL", "error": str(e)},
             "evidence": [],
             "plan": {"goal": "Handle error", "steps": ["Caught exception in UI wrapper."]},
@@ -344,275 +355,271 @@ def run_question(question: str, k: int):
             "trace": [],
         }
 
+def render_deliverable(deliverable: dict):
+    """Pretty deliverable view."""
+    if not deliverable:
+        st.write("No deliverable produced.")
+        return
+
+    st.markdown("### Executive Summary (≤150 words)")
+    st.write(deliverable.get("executive_summary", ""))
+
+    st.markdown("### Client-ready Email")
+    email = deliverable.get("client_email", {}) or {}
+    subj = email.get("subject", "")
+    body = email.get("body", "")
+    if subj:
+        st.markdown(f"**Subject:** {subj}")
+    if body:
+        st.text(body)
+    else:
+        st.write("No email body.")
+
+    st.markdown("### Action List")
+    actions = deliverable.get("action_list", []) or []
+    if actions:
+        st.table(actions)
+    else:
+        st.write("No actions generated.")
+
+    st.markdown("### Sources")
+    srcs = deliverable.get("sources", []) or []
+    if srcs:
+        for s in srcs:
+            st.markdown(f"- {s}")
+    else:
+        st.write("No sources.")
 
 # ==================== SIDEBAR ====================
 with st.sidebar:
-    st.markdown('<div style="padding: 16px;">', unsafe_allow_html=True)
+    st.image("https://cdn-icons-png.flaticon.com/512/4712/4712139.png", width=50)
     st.markdown("### HR Ops Copilot")
-    st.markdown(
-        '<div style="font-size: 12px; color: #a0aec0; margin-bottom: 16px;">Kosovo Labor Laws & Policies</div>',
-        unsafe_allow_html=True,
-    )
+    st.caption("Kosovo Labor Laws & Policies Assistant")
 
     st.markdown("---")
-    st.markdown("### Settings")
 
     k_label_to_value = {"Small": 4, "Standard": 6, "Deep": 8}
-    k_choice = st.radio("Retrieval depth", list(k_label_to_value.keys()), horizontal=True, index=1)
+    k_choice = st.radio("Search Depth", list(k_label_to_value.keys()), index=1)
     k = k_label_to_value[k_choice]
 
-    show_details = st.checkbox("Show details", value=False)
-    show_sources = st.checkbox("Show sources", value=True)
-
     st.markdown("---")
-    st.markdown("### Example Questions")
 
+    col1, col2 = st.columns(2)
+    with col1:
+        show_sources = st.checkbox("Sources", value=True)
+    with col2:
+        show_details = st.checkbox("Debug", value=False)
+
+    st.markdown("### Quick Examples")
     examples = [
         "What is the remote work policy?",
-        "List the official holidays in Kosovo according to Law 03-L-064.",
+        "Official holidays in Kosovo (Law 03-L-064)?",
         "Maximum working hours per week?",
         "Safety requirements at work?",
-        "Gender equality policy?",
-        "Available leave types?",
     ]
 
+    # IMPORTANT: stable unique keys (no collisions)
     for example in examples:
-        key = f"ex_{abs(hash(example))}"
-        if st.button(example, key=key, use_container_width=True):
+        if st.button(example, key=f"ex_{abs(hash(example))}", use_container_width=True):
             st.session_state.pending_question = example
             st.rerun()
 
-    st.markdown("---")
-    st.markdown(
-        '<div class="info-box"><strong>Tip:</strong> Press Enter to submit your question. Answers include verified citations.</div>',
-        unsafe_allow_html=True,
-    )
-
-    if st.button("Clear Chat", use_container_width=True):
+    if st.button("Clear Chat", key="clear_chat", type="secondary", use_container_width=True):
         st.session_state.conversation_history = []
         st.session_state.pop("pending_question", None)
+        st.session_state.inflight_question = None
+        st.session_state.assistant_typing_since = None
         st.rerun()
 
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# ==================== INITIALIZE SESSION ====================
+# ==================== SESSION STATE ====================
 st.session_state.setdefault("conversation_history", [])
 st.session_state.setdefault("inflight_question", None)
 st.session_state.setdefault("assistant_typing_since", None)
 
-# Dynamic: messages container is smaller when empty
-is_empty = len(st.session_state.conversation_history) == 0
-min_h = "20vh" if is_empty else "60vh"
-mb = "80px" if is_empty else "120px"
-st.markdown(
-    f"<style>.messages-container{{min-height:{min_h}; margin-bottom:{mb};}}</style>",
-    unsafe_allow_html=True,
-)
-
 # ==================== HEADER ====================
 st.markdown(
-    """
-<div class="chat-header">
-    <div class="chat-title">Kosovo HR Operations Assistant</div>
-    <div class="chat-subtitle">Ask questions about labor laws and company policies. All answers are verified with citations.</div>
-</div>
-""",
+    html_block(
+        """
+        <div style="text-align: center; margin-bottom: 40px; padding: 20px 0;">
+            <h1 style="color: #f8fafc; margin-bottom: 8px;">HR Operations Assistant</h1>
+            <p style="color: #94a3b8; font-size: 16px;">
+                Verified answers on Kosovo labor laws and company policies.
+            </p>
+        </div>
+        """
+    ),
     unsafe_allow_html=True,
 )
 
-# ==================== CONVERSATION AREA ====================
-with st.container():
-    st.markdown('<div class="messages-container">', unsafe_allow_html=True)
-
-    # Welcome (transparent card inside container)
-    if not st.session_state.conversation_history:
-        st.markdown(
+# ==================== WELCOME (if empty) ====================
+if not st.session_state.conversation_history:
+    st.markdown(
+        html_block(
             """
-        <div class="welcome-wrap">
-            <div class="welcome-emoji"></div>
-            <div class="welcome-title">Welcome to HR Ops Copilot</div>
-            <div class="welcome-sub">Ask me anything about Kosovo labor laws or company policies</div>
-        </div>
-        """,
-            unsafe_allow_html=True,
-        )
-
-    for message in st.session_state.conversation_history:
-        role = message.get("role", "")
-        timestamp = message.get("timestamp", "--:--")
-
-        if role == "user":
-            st.markdown(
-                f"""
-            <div class="user-message">
-                <div class="message-header">You - {safe_html(timestamp)}</div>
-                <div class="message-content">{safe_html(message.get("content",""))}</div>
+            <div style="text-align: center; padding: 40px; border: 1px dashed #334155; border-radius: 16px; margin: 0 auto; max-width: 600px; background: rgba(30, 41, 59, 0.5);">
+                <div style="font-size: 40px; margin-bottom: 16px;">👋</div>
+                <h3 style="color: #e2e8f0; margin-bottom: 8px;">Welcome to HR Copilot</h3>
+                <p style="color: #94a3b8;">Ask me anything about contracts, leave policies, or compliance.</p>
             </div>
-            """,
-                unsafe_allow_html=True,
-            )
-        else:
-            result = message.get("content") or {}
-            answer = result.get("answer", "")
-            verdict = result.get("verdict", {}) or {}
-            evidence = result.get("evidence", []) or []
-            plan = result.get("plan", {}) or {}
-            deliverable = result.get("deliverable", {}) or {}
-            trace = result.get("trace", []) or []
+            """
+        ),
+        unsafe_allow_html=True,
+    )
 
-            is_not_found = answer.strip().startswith("Not found")
+# ==================== CONVERSATION ====================
+st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 
-            st.markdown('<div class="ai-message">', unsafe_allow_html=True)
-            st.markdown(
-                f'<div class="message-header">HR Copilot - {safe_html(timestamp)}</div>',
-                unsafe_allow_html=True,
-            )
+for msg_idx, message in enumerate(st.session_state.conversation_history):
+    role = message.get("role", "")
+    timestamp = message.get("timestamp", "--:--")
 
-            # No more Plan/Research/Write/Verify pills here (removed)
-
-            if is_not_found:
-                st.markdown(f'<div class="not-found">{safe_html(answer)}</div>', unsafe_allow_html=True)
-            else:
-                answer_clean = strip_citations(answer)
-                st.markdown(f'<div class="message-content">{safe_html(answer_clean)}</div>', unsafe_allow_html=True)
-
-                # Sources ONLY at the end
-                if show_sources:
-                    sources = extract_sources(answer)
-                    if sources:
-                        chips = "".join(
-                            f'<span class="source-chip" title="{html.escape(s)}">{html.escape(s)}</span>'
-                            for s in sources
-                        )
-                        st.markdown(
-                            f"""
-                            <div class="sources-row">
-                                <span class="sources-title">Sources</span>
-                                {chips}
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
-
-            # No PASS/FAIL badge shown under each answer anymore (removed)
-            # If you want it, keep it ONLY inside Show details.
-
-            if show_details:
-                status = str(verdict.get("status", "UNKNOWN")).upper()
-                citations_count = len(extract_sources(answer)) if not is_not_found else 0
-                sources_count = len(evidence) if isinstance(evidence, list) else 0
-
-                st.markdown(
-                    f"""
-                <div style="margin-top: 10px; opacity: 0.9;">
-                    <div style="display:flex; gap:8px;">
-                        <div style="flex:1; background:#2d3748; padding:8px; border-radius:8px; text-align:center;">
-                            <div style="font-size:16px; font-weight:800; color:#667eea;">{sources_count}</div>
-                            <div style="font-size:10px; color:#a0aec0; text-transform:uppercase;">Retrieved</div>
-                        </div>
-                        <div style="flex:1; background:#2d3748; padding:8px; border-radius:8px; text-align:center;">
-                            <div style="font-size:16px; font-weight:800; color:#667eea;">{citations_count}</div>
-                            <div style="font-size:10px; color:#a0aec0; text-transform:uppercase;">Cited</div>
-                        </div>
-                        <div style="flex:1; background:#2d3748; padding:8px; border-radius:8px; text-align:center;">
-                            <div style="font-size:16px; font-weight:800; color:#667eea;">{html.escape(status)}</div>
-                            <div style="font-size:10px; color:#a0aec0; text-transform:uppercase;">Verdict</div>
-                        </div>
+    if role == "user":
+        st.markdown(
+            html_block(
+                f"""
+                <div class="message-user-wrap">
+                    <div class="user-content">
+                        <div class="user-header">You • {safe_html(timestamp)}</div>
+                        {safe_html(message.get("content",""))}
                     </div>
                 </div>
-                """,
-                    unsafe_allow_html=True,
-                )
-
-                with st.expander("Plan"):
-                    st.markdown(f"**Goal:** {plan.get('goal','')}")
-                    st.markdown("**Steps:**")
-                    for i, step in enumerate(plan.get("steps", []) or [], 1):
-                        st.markdown(f"{i}. {step}")
-
-                with st.expander("Evidence"):
-                    if isinstance(evidence, list):
-                        for i, ev in enumerate(evidence, 1):
-                            cite = safe_html(ev.get("citation", f"Source {i}"))
-                            txt = ev.get("text", "")
-                            snippet = txt[:400] + ("..." if len(txt) > 400 else "")
-                            st.markdown(
-                                f"""
-                            <div class="evidence-card">
-                                <div class="evidence-header">Source {i}: {cite}</div>
-                                <div class="evidence-text">{safe_html(snippet)}</div>
-                            </div>
-                            """,
-                                unsafe_allow_html=True,
-                            )
-                    else:
-                        st.markdown(safe_html(str(evidence)), unsafe_allow_html=True)
-
-                with st.expander("Verification"):
-                    st.json(verdict)
-
-                with st.expander("Final Deliverable (Executive Summary + Email + Actions + Sources)"):
-                    if deliverable:
-                        st.markdown("### Executive Summary (<=150 words)")
-                        st.write(deliverable.get("executive_summary", ""))
-
-                        st.markdown("### Client-ready Email")
-                        email = deliverable.get("client_email", {}) or {}
-                        st.markdown(f"**Subject:** {email.get('subject','')}")
-                        st.text(email.get("body", ""))
-
-                        st.markdown("### Action List")
-                        actions = deliverable.get("action_list", []) or []
-                        if actions:
-                            st.table(actions)
-                        else:
-                            st.write("No actions generated.")
-
-                        st.markdown("### Sources")
-                        srcs = deliverable.get("sources", []) or []
-                        if srcs:
-                            for s in srcs:
-                                st.markdown(f"- {s}")
-                        else:
-                            st.write("No sources.")
-                    else:
-                        st.write("No deliverable produced.")
-
-                with st.expander("Observability (trace)"):
-                    if trace:
-                        st.table(trace)
-                    else:
-                        st.write("No trace available.")
-
-            st.markdown("</div>", unsafe_allow_html=True)
-
-    if st.session_state.inflight_question:
-        st.markdown(
-            f"""
-        <div class="typing-message">
-            <div class="message-header">HR Copilot - {safe_html(st.session_state.assistant_typing_since or "--:--")}</div>
-            <div class="typing-line">
-                Preparing a verified answer
-                <span class="typing-dots"><span></span><span></span><span></span></span>
-            </div>
-        </div>
-        """,
+                """
+            ),
             unsafe_allow_html=True,
         )
+        continue
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    # Assistant message
+    result = message.get("content") or {}
+    answer = result.get("answer", "") or ""
+    verdict = result.get("verdict", {}) or {}
+    evidence = result.get("evidence", []) or []
+    plan = result.get("plan", {}) or {}
+    deliverable = result.get("deliverable", {}) or {}
+    trace = result.get("trace", []) or []
+
+    status = str(verdict.get("status", "UNKNOWN")).upper()
+    pill_cls = verdict_class(status)
+
+    is_not_found = answer.strip() == NOT_FOUND or answer.strip().startswith("Not found")
+
+    content_html = ""
+    if is_not_found:
+        content_html = f'<div class="not-found">{safe_html(NOT_FOUND)}</div>'
+    else:
+        answer_clean = strip_citations(answer)
+        content_html = f"<div>{safe_html(answer_clean)}</div>"
+
+        if show_sources:
+            sources = extract_sources(answer)
+            if sources:
+                chips = "".join(
+                    f'<span class="source-chip" title="{html.escape(s)}">{html.escape(s)}</span>'
+                    for s in sources
+                )
+                content_html += html_block(
+                    f"""
+                    <div class="sources-row">
+                        <span class="sources-label">Sources</span>
+                        {chips}
+                    </div>
+                    """
+                )
+
+    st.markdown(
+        html_block(
+            f"""
+            <div class="message-ai-wrap">
+                <div class="ai-content">
+                    <div class="ai-header">
+                        <div class="ai-header-left">
+                            <span>🤖 HR Copilot</span>
+                            <span>• {safe_html(timestamp)}</span>
+                        </div>
+                        <div class="ai-header-right">
+                            <span class="verdict-pill {pill_cls}">{safe_html(status)}</span>
+                        </div>
+                    </div>
+                    {content_html}
+                </div>
+            </div>
+            """
+        ),
+        unsafe_allow_html=True,
+    )
+
+    # ==================== DEBUG ====================
+    if show_details:
+        with st.expander("🔍 View Analysis Details (Debug)", expanded=False):
+            st.markdown(f"**Verdict Status:** `{status}`")
+            if verdict.get("error"):
+                st.error(f"Error: {verdict.get('error')}")
+
+            tab1, tab2, tab3, tab4 = st.tabs(["Evidence", "Plan", "Deliverable", "Trace"])
+
+            # Evidence FULL (no truncation)
+            with tab1:
+                if isinstance(evidence, list) and evidence:
+                    for i, ev in enumerate(evidence, 1):
+                        cite = ev.get("citation", f"Source {i}")
+                        txt = ev.get("text", "") or ""
+
+                        with st.expander(f"Source {i}: {cite}", expanded=False):
+                            st.text_area(
+                                "Chunk text",
+                                value=txt,
+                                height=240,
+                                key=f"ev_full_{msg_idx}_{i}",
+                            )
+                else:
+                    st.caption("No evidence returned.")
+
+            with tab2:
+                st.json(plan)
+
+            with tab3:
+                render_deliverable(deliverable)
+
+            with tab4:
+                if trace:
+                    try:
+                        st.dataframe(trace)
+                    except Exception:
+                        st.json(trace)
+                else:
+                    st.caption("No trace available.")
+
+st.markdown("</div>", unsafe_allow_html=True)
+
+# ==================== TYPING INDICATOR ====================
+if st.session_state.inflight_question:
+    started = st.session_state.assistant_typing_since or "--:--"
+    st.markdown(
+        html_block(
+            f"""
+            <div class="typing-box">
+                <span>Preparing a verified answer • {safe_html(started)}</span>
+                <span class="typing-dots"><span></span><span></span><span></span></span>
+            </div>
+            """
+        ),
+        unsafe_allow_html=True,
+    )
 
 # ==================== INPUT AREA ====================
+
+# Handle queued questions from sidebar buttons
 queued = st.session_state.pop("pending_question", None)
 if queued and not st.session_state.inflight_question:
-    q = queued.strip()
+    q = str(queued).strip()
     if q:
         st.session_state.conversation_history.append({"role": "user", "content": q, "timestamp": now_hhmm()})
         st.session_state.inflight_question = q
         st.session_state.assistant_typing_since = now_hhmm()
         st.rerun()
 
-if prompt := st.chat_input("Ask your HR question here... (Press Enter to submit)", key="chat_input"):
+# Main chat input
+if prompt := st.chat_input("Type your question here...", key="chat_input"):
     q = prompt.strip()
     if q and not st.session_state.inflight_question:
         st.session_state.conversation_history.append({"role": "user", "content": q, "timestamp": now_hhmm()})
@@ -620,8 +627,9 @@ if prompt := st.chat_input("Ask your HR question here... (Press Enter to submit)
         st.session_state.assistant_typing_since = now_hhmm()
         st.rerun()
 
+# Process inflight question (runs after rerun to show typing UI)
 if st.session_state.inflight_question:
-    with st.spinner("Processing..."):
+    with st.spinner("Processing HR knowledge base..."):
         result = run_question(st.session_state.inflight_question, k=k)
 
     st.session_state.conversation_history.append({"role": "assistant", "content": result, "timestamp": now_hhmm()})

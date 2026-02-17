@@ -12,6 +12,23 @@ from agents.writer import write_answer
 from agents.verifier import verify_answer
 from agents.deliverer import build_deliverable, NOT_FOUND_EXACT
 
+NOT_FOUND = "Not found in provided sources."
+
+
+def _normalize_citations(answer: str) -> str:
+    """
+    Convert citation formatting from:
+      (Doc | ...chunk_0001)  ->  [Doc | ...chunk_0001]
+    Only touches strings that look like your citations (contain '|' and 'chunk_').
+    """
+    if not answer:
+        return answer
+    if answer.strip() == NOT_FOUND:
+        return answer
+
+    # Convert parentheses citations to bracket citations
+    return re.sub(r"\(([^()]*\|[^()]*chunk_[^()]*)\)", r"[\1]", answer)
+
 
 class WorkflowState(TypedDict):
     # Inputs
@@ -127,8 +144,11 @@ def _write_node(state: WorkflowState) -> dict:
     ms = int((time.perf_counter() - t0) * 1000)
     draft = _apply_company_name(draft, state["company_name"])
 
-    draft = _fix_answer_citations(draft, state.get("evidence", []) or [])
+    # ✅ Normalize ( ... ) citations -> [ ... ] BEFORE fixing chunk-only citations
+    draft = _normalize_citations(draft)
 
+    # ✅ Fix chunk-only citations using evidence mapping
+    draft = _fix_answer_citations(draft, state.get("evidence", []) or [])
 
     trace = _trace_append(
         state,
@@ -148,11 +168,13 @@ def _write_node(state: WorkflowState) -> dict:
 def _verify_node(state: WorkflowState) -> dict:
     t0 = time.perf_counter()
 
+    # ✅ Verify the normalized/fixed draft
     draft = state.get("draft", "") or state.get("answer", "")
+
     verdict = verify_answer(
         state["question"],
         state.get("evidence_pack", ""),
-        state.get("draft", ""),
+        draft,
         evidence_list=state.get("evidence", []) or [],
     )
 
@@ -174,10 +196,14 @@ def _revise_node(state: WorkflowState) -> dict:
         state.get("evidence_pack", "") + "\n\nVERIFIER FEEDBACK:\n" + feedback,
         return_meta=True,
     )
-    revised = _apply_company_name(revised, state["company_name"])
-    
-    revised = _fix_answer_citations(revised, state.get("evidence", []) or [])
 
+    revised = _apply_company_name(revised, state["company_name"])
+
+    # ✅ Normalize ( ... ) citations -> [ ... ] BEFORE fixing chunk-only citations
+    revised = _normalize_citations(revised)
+
+    # ✅ Fix chunk-only citations using evidence mapping
+    revised = _fix_answer_citations(revised, state.get("evidence", []) or [])
 
     ms = int((time.perf_counter() - t0) * 1000)
     trace = _trace_append(
